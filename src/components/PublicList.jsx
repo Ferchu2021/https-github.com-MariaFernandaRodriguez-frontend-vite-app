@@ -1,21 +1,16 @@
-/frontend-vite-app
-  /src
-    /components
-      - PublicList.jsx
-      - LoginForm.jsx
-      - PrivateCrud.jsx
-      - ModalConfirm.jsx
-    /routes
-      - PublicPage.jsx
-      - LoginPage.jsx
-      - PrivatePage.jsx
-    /services
-      - api.js
-    /hooks
-      - useAuth.js
-    App.jsx
-    main.jsx
-  .env
-  .gitignore
-  package.json
-  README.md
+import React from "react";
+
+const PublicList = () => {
+  return (
+    <div>
+      <h2>Lista Pública</h2>
+      <ul>
+        <li>Elemento 1</li>
+        <li>Elemento 2</li>
+        <li>Elemento 3</li>
+      </ul>
+    </div>
+  );
+};
+
+export default PublicList;
