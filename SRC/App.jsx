@@ -1,34 +1,18 @@
-import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import PublicPage from "./routes/PublicPage";
-import LoginPage from "./routes/LoginPage";
-import PrivatePage from "./routes/PrivatePage";
-import { useAuth } from "./hooks/useAuth";
-import Navbar from "./Components/Navbar"; // Importar tu Navbar
+import { Routes, Route, Navigate } from 'react-router-dom';
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
 
-function PrivateRoute({ children }) {
-  const { user } = useAuth();
-  return user ? children : <Navigate to="/login" />;
-}
-
-export default function App() {
-  const { user } = useAuth(); // Obtener el usuario para condicionar el Navbar
-
+function App() {
   return (
-    <BrowserRouter>
-      {user && <Navbar />} {/* Mostrar Navbar solo si hay usuario logueado */}
-      <Routes>
-        <Route path="/" element={<PublicPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route
-          path="/private"
-          element={
-            <PrivateRoute>
-              <PrivatePage />
-            </PrivateRoute>
-          }
-        />
-      </Routes>
-    </BrowserRouter>
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/dashboard" element={<Dashboard />} />
+      {/* Redirección de rutas no encontradas */}
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
   );
 }
+
+export default App;
