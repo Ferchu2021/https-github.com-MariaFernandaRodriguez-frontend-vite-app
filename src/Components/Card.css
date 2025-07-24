@@ -1,0 +1,18 @@
+.ui-card {
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  background: #fafaff;
+  box-shadow: 0 1px 4px #0001;
+  padding: 1em 1.5em;
+  margin-bottom: 1.2em;
+}
+
+.ui-card-title {
+  font-size: 1.15em;
+  font-weight: 700;
+  margin-bottom: 0.7em;
+}
+
+.ui-card-body {
+  font-size: 1em;
+}
