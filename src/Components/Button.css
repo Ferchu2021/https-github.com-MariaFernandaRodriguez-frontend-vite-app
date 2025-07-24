@@ -1,0 +1,17 @@
+.ui-button {
+  background: #007bff;
+  color: #fff;
+  border: none;
+  padding: 0.6em 1.2em;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.ui-button:hover:not(:disabled) {
+  background: #0056b3;
+}
+.ui-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
