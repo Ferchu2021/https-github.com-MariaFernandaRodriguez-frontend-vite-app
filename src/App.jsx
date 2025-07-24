@@ -11,6 +11,7 @@ function App() {
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/ping" element={<Ping />} />
       {/* Redirección de rutas no encontradas */}
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
