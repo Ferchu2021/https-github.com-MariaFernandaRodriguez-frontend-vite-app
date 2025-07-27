@@ -1,5 +1,5 @@
 import React from "react";
-import PrivateCrud from "../components/PrivateCrud";
+import PrivateCrud from "../components/privateCrud";
 import { useAuth } from "../hooks/useAuth";
 
 export default function PrivatePage() {
