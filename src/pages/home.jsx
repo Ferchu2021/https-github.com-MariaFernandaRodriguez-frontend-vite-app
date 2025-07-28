@@ -6,7 +6,7 @@ function Home() {
 
   useEffect(() => {
     // Cambia esta URL por la URL real y pública de tu backend
-    fetch("https://TU_BACKEND_URL/api/ENTIDAD")
+    fetch("http://localhost:3001/api")
       .then((res) => res.json())
       .then((data) => {
         setDatos(data);
