@@ -1,6 +1,7 @@
 import React from "react";
 import PropTypes from "prop-types";
-import "./Card.css";
+import "./card.css";
+
 
 export default function Card({ title, children, className = "", ...rest }) {
   return (

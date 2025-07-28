@@ -1,6 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
-import "./Input.css";
+import "./input.css";
 
 /**
  * Componente Input reutilizable para la UI.

@@ -1,5 +1,5 @@
 import React from "react";
-import "./Loader.css";
+import "./loader.css";
 
 export default function Loader({ text = "Cargando..." }) {
   return (

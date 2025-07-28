@@ -1,6 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
-import "./Modal.css";
+import "./modal.css";
 
 export default function Modal({ open, onClose, children, title }) {
   if (!open) return null;

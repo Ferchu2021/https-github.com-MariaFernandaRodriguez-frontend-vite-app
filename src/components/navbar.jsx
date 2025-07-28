@@ -1,7 +1,7 @@
 // SRC/Components/Navbar.jsx
 import React from 'react';
 
-function Navbar() {
+function navbar() {
   function handleLogout() {
     localStorage.removeItem('token');   // Borra el token de autenticación
     window.location.href = '/';         // Redirige al home (podés poner '/login' si querés)
@@ -16,4 +16,4 @@ function Navbar() {
   );
 }
 
-export default Navbar;
+export default navbar;

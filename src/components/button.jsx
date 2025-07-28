@@ -1,16 +1,7 @@
-import "./Button.css";
-import React from "react";
-import PropTypes from "prop-types";
+import Button from "../components/button";
+import "./button.css";
 
-/**
- * Botón reutilizable y accesible para la UI.
- * Props:
- * - children: texto o contenido dentro del botón
- * - onClick: función a ejecutar al hacer click
- * - type: tipo de botón ("button", "submit", "reset")
- * - disabled: estado de deshabilitado
- * - className: clases CSS adicionales para personalización
- */
+
 export default function Button({
   children,
   onClick,
@@ -31,7 +22,6 @@ export default function Button({
     </button>
   );
 }
-
 Button.propTypes = {
   children: PropTypes.node.isRequired,
   onClick: PropTypes.func,

@@ -1,6 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
-import Modal from "src/Components/Modal"; // usa el Modal base
+import Modal from "src/components/modal"; // usa el Modal base
 
 export default function ModalConfirm({ open, title, description, onConfirm, onCancel }) {
   return (

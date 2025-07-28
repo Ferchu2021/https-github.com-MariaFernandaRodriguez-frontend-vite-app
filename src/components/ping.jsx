@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-function Ping() {
+function ping() {
   const [status, setStatus] = useState(null);
 
   useEffect(() => {
@@ -17,5 +17,5 @@ function Ping() {
   );
 }
 
-export default Ping;
+export default ping;
 

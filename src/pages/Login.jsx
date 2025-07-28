@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Input from "src/Components/Input";
+import Input from "src/components/input";
 
 
-function Login() {
+function login() {
   const [input, setInput] = useState({ user: '', password: '' });
   const [errors, setErrors] = useState({});
   const [authError, setAuthError] = useState('');
@@ -76,4 +76,4 @@ function Login() {
   );
 }
 
-export default Login;
+export default login;
