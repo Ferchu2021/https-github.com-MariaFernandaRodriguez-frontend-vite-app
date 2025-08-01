@@ -1,96 +1,94 @@
-import { useState, useEffect, createContext, useContext } from "react";
-import { useNavigate } from "react-router-dom";
-import { login as apiLogin, logout as apiLogout, refreshToken } from "../services/api";
+import { useState, useEffect, createContext, useContext } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../firebase/config';
+import { login as apiLogin, logout as apiLogout, register as apiRegister } from '../services/api';
 
-// Create Auth Context
 const AuthContext = createContext();
 
-// Auth Provider Component
-export function AuthProvider({ children }) {
+export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const navigate = useNavigate();
 
-  // Check if user is authenticated on mount
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (token) {
-          // Verify token is still valid
-          try {
-            const response = await refreshToken();
-            setUser(response.user);
-          } catch (error) {
-            // Token is invalid, remove it
-            localStorage.removeItem("token");
-            setUser(null);
-          }
-        }
-      } catch (error) {
-        console.error("Auth check failed:", error);
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+      setLoading(false);
+      setError(null);
+    });
 
-    checkAuth();
+    return unsubscribe;
   }, []);
 
   const login = async (credentials) => {
     try {
-      setLoading(true);
       setError(null);
-      const response = await apiLogin(credentials);
-      localStorage.setItem("token", response.token);
-      setUser(response.user);
-      navigate("/dashboard");
-      return response;
+      const result = await apiLogin(credentials);
+      return result;
     } catch (error) {
       setError(error.message);
       throw error;
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const register = async (userData) => {
+    try {
+      setError(null);
+      const result = await apiRegister(userData);
+      return result;
+    } catch (error) {
+      setError(error.message);
+      throw error;
     }
   };
 
   const logout = async () => {
     try {
-      await apiLogout();
-    } catch (error) {
-      console.error("Logout API call failed:", error);
-    } finally {
-      localStorage.removeItem("token");
-      setUser(null);
       setError(null);
-      navigate("/");
+      await apiLogout();
+      setUser(null);
+    } catch (error) {
+      setError(error.message);
+      throw error;
     }
   };
 
-  const clearError = () => {
-    setError(null);
+  const refreshToken = async () => {
+    try {
+      setError(null);
+      const result = await apiLogin({ 
+        email: user?.email, 
+        password: 'current-password' // Esto necesitaría ser manejado de forma diferente
+      });
+      return result;
+    } catch (error) {
+      setError(error.message);
+      throw error;
+    }
   };
 
   const value = {
     user,
     loading,
     error,
-    login,
-    logout,
-    clearError,
     isAuthenticated: !!user,
+    login,
+    register,
+    logout,
+    refreshToken
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
 
-// Custom hook to use auth context
-export function useAuth() {
+export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}
+};

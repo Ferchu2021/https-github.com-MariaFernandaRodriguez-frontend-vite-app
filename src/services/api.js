@@ -1,227 +1,434 @@
-//const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
-const API_URL = "http://localhost:3001";
+import { 
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from 'firebase/auth';
+import {
+  collection,
+  doc,
+  getDocs,
+  getDoc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  query,
+  where,
+  orderBy,
+  limit,
+  serverTimestamp
+} from 'firebase/firestore';
+import { auth, db } from '../firebase/config';
 
-// Helper function to handle API responses
-const handleResponse = async (response) => {
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-  }
-  return response.json();
+// Helper function to handle Firebase errors
+const handleFirebaseError = (error) => {
+  console.error('Firebase Error:', error);
+  throw new Error(error.message || 'Error en la operación');
 };
 
-// Helper function to get auth headers
-const getAuthHeaders = () => {
-  const token = localStorage.getItem("token");
-  return {
-    "Content-Type": "application/json",
-    ...(token && { Authorization: `Bearer ${token}` }),
-  };
-};
-
-// Authentication endpoints
+// Authentication
 export const login = async (credentials) => {
-  const res = await fetch(`${API_URL}/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(credentials),
-  });
-  return handleResponse(res);
+  try {
+    const userCredential = await signInWithEmailAndPassword(
+      auth, 
+      credentials.email || credentials.user, 
+      credentials.password
+    );
+    
+    const token = await userCredential.user.getIdToken();
+    
+    return {
+      success: true,
+      user: userCredential.user,
+      token: token
+    };
+  } catch (error) {
+    handleFirebaseError(error);
+  }
 };
 
 export const register = async (userData) => {
-  const res = await fetch(`${API_URL}/auth/register`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(userData),
-  });
-  return handleResponse(res);
+  try {
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      userData.email,
+      userData.password
+    );
+    
+    // Crear perfil de usuario en Firestore
+    await addDoc(collection(db, 'users'), {
+      uid: userCredential.user.uid,
+      name: userData.name,
+      email: userData.email,
+      role: 'user',
+      createdAt: serverTimestamp()
+    });
+    
+    return {
+      success: true,
+      user: userCredential.user
+    };
+  } catch (error) {
+    handleFirebaseError(error);
+  }
 };
 
 export const logout = async () => {
-  const res = await fetch(`${API_URL}/auth/logout`, {
-    method: "POST",
-    headers: getAuthHeaders(),
-  });
-  return handleResponse(res);
+  try {
+    await signOut(auth);
+    return { success: true };
+  } catch (error) {
+    handleFirebaseError(error);
+  }
 };
 
 export const refreshToken = async () => {
-  const res = await fetch(`${API_URL}/auth/refresh`, {
-    method: "POST",
-    headers: getAuthHeaders(),
-  });
-  return handleResponse(res);
+  try {
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+      const token = await currentUser.getIdToken(true);
+      return { success: true, token };
+    }
+    throw new Error('No hay usuario autenticado');
+  } catch (error) {
+    handleFirebaseError(error);
+  }
 };
 
-// Dashboard statistics
-export const getDashboardStats = async () => {
-  const res = await fetch(`${API_URL}/dashboard/stats`, {
-    headers: getAuthHeaders(),
-  });
-  return handleResponse(res);
-};
-
-export const getChartData = async (chartType, period = 'week') => {
-  const res = await fetch(`${API_URL}/dashboard/charts/${chartType}?period=${period}`, {
-    headers: getAuthHeaders(),
-  });
-  return handleResponse(res);
-};
-
-// Data CRUD operations
+// Data CRUD Operations
 export const fetchData = async (params = {}) => {
-  const queryString = new URLSearchParams(params).toString();
-  const res = await fetch(`${API_URL}/data${queryString ? `?${queryString}` : ''}`);
-  return handleResponse(res);
+  try {
+    const dataRef = collection(db, 'data');
+    const q = query(dataRef, orderBy('createdAt', 'desc'));
+    const querySnapshot = await getDocs(q);
+    
+    const data = [];
+    querySnapshot.forEach((doc) => {
+      data.push({ id: doc.id, ...doc.data() });
+    });
+    
+    return { success: true, data };
+  } catch (error) {
+    handleFirebaseError(error);
+  }
 };
 
 export const getPrivateData = async (params = {}) => {
-  const queryString = new URLSearchParams(params).toString();
-  const res = await fetch(`${API_URL}/data/private${queryString ? `?${queryString}` : ''}`, {
-    headers: getAuthHeaders(),
-  });
-  return handleResponse(res);
+  try {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      throw new Error('Usuario no autenticado');
+    }
+
+    const dataRef = collection(db, 'data');
+    const q = query(
+      dataRef, 
+      where('userId', '==', currentUser.uid),
+      orderBy('createdAt', 'desc')
+    );
+    const querySnapshot = await getDocs(q);
+    
+    const data = [];
+    querySnapshot.forEach((doc) => {
+      data.push({ id: doc.id, ...doc.data() });
+    });
+    
+    return { success: true, data };
+  } catch (error) {
+    handleFirebaseError(error);
+  }
 };
 
 export const getDataById = async (id) => {
-  const res = await fetch(`${API_URL}/data/${id}`, {
-    headers: getAuthHeaders(),
-  });
-  return handleResponse(res);
+  try {
+    const docRef = doc(db, 'data', id);
+    const docSnap = await getDoc(docRef);
+    
+    if (docSnap.exists()) {
+      return { success: true, data: { id: docSnap.id, ...docSnap.data() } };
+    } else {
+      throw new Error('Documento no encontrado');
+    }
+  } catch (error) {
+    handleFirebaseError(error);
+  }
 };
 
 export const createData = async (data) => {
-  const res = await fetch(`${API_URL}/data`, {
-    method: "POST",
-    headers: getAuthHeaders(),
-    body: JSON.stringify(data),
-  });
-  return handleResponse(res);
+  try {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      throw new Error('Usuario no autenticado');
+    }
+
+    const docRef = await addDoc(collection(db, 'data'), {
+      ...data,
+      userId: currentUser.uid,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    
+    return { success: true, id: docRef.id };
+  } catch (error) {
+    handleFirebaseError(error);
+  }
 };
 
 export const updateData = async (id, data) => {
-  const res = await fetch(`${API_URL}/data/${id}`, {
-    method: "PUT",
-    headers: getAuthHeaders(),
-    body: JSON.stringify(data),
-  });
-  return handleResponse(res);
+  try {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      throw new Error('Usuario no autenticado');
+    }
+
+    const docRef = doc(db, 'data', id);
+    await updateDoc(docRef, {
+      ...data,
+      updatedAt: serverTimestamp()
+    });
+    
+    return { success: true };
+  } catch (error) {
+    handleFirebaseError(error);
+  }
 };
 
 export const deleteData = async (id) => {
-  const res = await fetch(`${API_URL}/data/${id}`, {
-    method: "DELETE",
-    headers: getAuthHeaders(),
-  });
-  return handleResponse(res);
+  try {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      throw new Error('Usuario no autenticado');
+    }
+
+    await deleteDoc(doc(db, 'data', id));
+    return { success: true };
+  } catch (error) {
+    handleFirebaseError(error);
+  }
 };
 
-// User management
+// Dashboard Statistics
+export const getDashboardStats = async () => {
+  try {
+    // Obtener estadísticas de Firestore
+    const dataSnapshot = await getDocs(collection(db, 'data'));
+    const usersSnapshot = await getDocs(collection(db, 'users'));
+    
+    const totalData = dataSnapshot.size;
+    const totalUsers = usersSnapshot.size;
+    
+    // Calcular estadísticas básicas
+    const stats = [
+      {
+        title: "Total de Datos",
+        value: totalData.toString(),
+        icon: "📊",
+        trend: "+12%",
+        color: "blue"
+      },
+      {
+        title: "Usuarios Registrados",
+        value: totalUsers.toString(),
+        icon: "👥",
+        trend: "+5%",
+        color: "green"
+      },
+      {
+        title: "Productos Activos",
+        value: "150",
+        icon: "📦",
+        trend: "+8%",
+        color: "purple"
+      },
+      {
+        title: "Ingresos Mensuales",
+        value: "$12,450",
+        icon: "💰",
+        trend: "+15%",
+        color: "orange"
+      }
+    ];
+    
+    return { success: true, data: stats };
+  } catch (error) {
+    handleFirebaseError(error);
+  }
+};
+
+// Chart Data
+export const getChartData = async (chartType, period = 'week') => {
+  try {
+    // Generar datos de ejemplo para gráficos
+    const generateChartData = () => {
+      const days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+      return days.map(day => ({
+        name: day,
+        sales: Math.floor(Math.random() * 2000) + 500,
+        target: 1000
+      }));
+    };
+    
+    const data = generateChartData();
+    return { success: true, data };
+  } catch (error) {
+    handleFirebaseError(error);
+  }
+};
+
+// User Management
 export const getUsers = async (params = {}) => {
-  const queryString = new URLSearchParams(params).toString();
-  const res = await fetch(`${API_URL}/users${queryString ? `?${queryString}` : ''}`, {
-    headers: getAuthHeaders(),
-  });
-  return handleResponse(res);
+  try {
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, orderBy('createdAt', 'desc'));
+    const querySnapshot = await getDocs(q);
+    
+    const users = [];
+    querySnapshot.forEach((doc) => {
+      users.push({ id: doc.id, ...doc.data() });
+    });
+    
+    return { success: true, data: users };
+  } catch (error) {
+    handleFirebaseError(error);
+  }
 };
 
 export const getUserById = async (id) => {
-  const res = await fetch(`${API_URL}/users/${id}`, {
-    headers: getAuthHeaders(),
-  });
-  return handleResponse(res);
+  try {
+    const docRef = doc(db, 'users', id);
+    const docSnap = await getDoc(docRef);
+    
+    if (docSnap.exists()) {
+      return { success: true, data: { id: docSnap.id, ...docSnap.data() } };
+    } else {
+      throw new Error('Usuario no encontrado');
+    }
+  } catch (error) {
+    handleFirebaseError(error);
+  }
 };
 
 export const updateUser = async (id, userData) => {
-  const res = await fetch(`${API_URL}/users/${id}`, {
-    method: "PUT",
-    headers: getAuthHeaders(),
-    body: JSON.stringify(userData),
-  });
-  return handleResponse(res);
+  try {
+    const docRef = doc(db, 'users', id);
+    await updateDoc(docRef, {
+      ...userData,
+      updatedAt: serverTimestamp()
+    });
+    
+    return { success: true };
+  } catch (error) {
+    handleFirebaseError(error);
+  }
 };
 
 export const deleteUser = async (id) => {
-  const res = await fetch(`${API_URL}/users/${id}`, {
-    method: "DELETE",
-    headers: getAuthHeaders(),
-  });
-  return handleResponse(res);
-};
-
-// File upload
-export const uploadFile = async (file, type = 'general') => {
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('type', type);
-
-  const token = localStorage.getItem("token");
-  const res = await fetch(`${API_URL}/upload`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    body: formData,
-  });
-  return handleResponse(res);
+  try {
+    await deleteDoc(doc(db, 'users', id));
+    return { success: true };
+  } catch (error) {
+    handleFirebaseError(error);
+  }
 };
 
 // Notifications
 export const getNotifications = async () => {
-  const res = await fetch(`${API_URL}/notifications`, {
-    headers: getAuthHeaders(),
-  });
-  return handleResponse(res);
+  try {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      throw new Error('Usuario no autenticado');
+    }
+
+    const notificationsRef = collection(db, 'notifications');
+    const q = query(
+      notificationsRef,
+      where('userId', '==', currentUser.uid),
+      orderBy('createdAt', 'desc')
+    );
+    const querySnapshot = await getDocs(q);
+    
+    const notifications = [];
+    querySnapshot.forEach((doc) => {
+      notifications.push({ id: doc.id, ...doc.data() });
+    });
+    
+    return { success: true, data: notifications };
+  } catch (error) {
+    handleFirebaseError(error);
+  }
 };
 
 export const markNotificationAsRead = async (id) => {
-  const res = await fetch(`${API_URL}/notifications/${id}/read`, {
-    method: "PUT",
-    headers: getAuthHeaders(),
-  });
-  return handleResponse(res);
+  try {
+    const docRef = doc(db, 'notifications', id);
+    await updateDoc(docRef, {
+      read: true,
+      updatedAt: serverTimestamp()
+    });
+    
+    return { success: true };
+  } catch (error) {
+    handleFirebaseError(error);
+  }
 };
 
 export const deleteNotification = async (id) => {
-  const res = await fetch(`${API_URL}/notifications/${id}`, {
-    method: "DELETE",
-    headers: getAuthHeaders(),
-  });
-  return handleResponse(res);
-};
-
-// Search functionality
-export const searchData = async (query, filters = {}) => {
-  const searchParams = new URLSearchParams({
-    q: query,
-    ...filters,
-  });
-  
-  const res = await fetch(`${API_URL}/search?${searchParams}`, {
-    headers: getAuthHeaders(),
-  });
-  return handleResponse(res);
-};
-
-// Export data
-export const exportData = async (format = 'csv', filters = {}) => {
-  const queryString = new URLSearchParams(filters).toString();
-  const res = await fetch(`${API_URL}/export/${format}${queryString ? `?${queryString}` : ''}`, {
-    headers: getAuthHeaders(),
-  });
-  
-  if (!res.ok) {
-    throw new Error(`Export failed: ${res.status}`);
+  try {
+    await deleteDoc(doc(db, 'notifications', id));
+    return { success: true };
+  } catch (error) {
+    handleFirebaseError(error);
   }
-  
-  const blob = await res.blob();
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `export-${new Date().toISOString().split('T')[0]}.${format}`;
-  document.body.appendChild(a);
-  a.click();
-  window.URL.revokeObjectURL(url);
-  document.body.removeChild(a);
+};
+
+// Search
+export const searchData = async (query, filters = {}) => {
+  try {
+    const dataRef = collection(db, 'data');
+    let q = dataRef;
+    
+    // Aplicar filtros si existen
+    if (filters.category) {
+      q = query(q, where('category', '==', filters.category));
+    }
+    
+    const querySnapshot = await getDocs(q);
+    
+    const data = [];
+    querySnapshot.forEach((doc) => {
+      const docData = doc.data();
+      // Búsqueda simple en el nombre y descripción
+      if (docData.name?.toLowerCase().includes(query.toLowerCase()) ||
+          docData.description?.toLowerCase().includes(query.toLowerCase())) {
+        data.push({ id: doc.id, ...docData });
+      }
+    });
+    
+    return { success: true, data };
+  } catch (error) {
+    handleFirebaseError(error);
+  }
+};
+
+// Export (simulado)
+export const exportData = async (format = 'csv', filters = {}) => {
+  try {
+    const dataRef = collection(db, 'data');
+    const querySnapshot = await getDocs(dataRef);
+    
+    const data = [];
+    querySnapshot.forEach((doc) => {
+      data.push({ id: doc.id, ...doc.data() });
+    });
+    
+    // Simular exportación
+    return { 
+      success: true, 
+      data: data,
+      format: format,
+      message: `Datos exportados en formato ${format}`
+    };
+  } catch (error) {
+    handleFirebaseError(error);
+  }
 };
