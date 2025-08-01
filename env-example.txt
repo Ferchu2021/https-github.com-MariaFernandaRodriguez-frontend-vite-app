@@ -1,0 +1,9 @@
+# Copia este contenido a un archivo llamado .env en la raíz de tu proyecto
+# Reemplaza los valores con las credenciales reales de tu proyecto mcga-87b96
+
+VITE_FIREBASE_API_KEY=tu-api-key-real-de-mcga-87b96
+VITE_FIREBASE_AUTH_DOMAIN=mcga-87b96.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=mcga-87b96
+VITE_FIREBASE_STORAGE_BUCKET=mcga-87b96.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=tu-messaging-sender-id
+VITE_FIREBASE_APP_ID=tu-app-id-real 
