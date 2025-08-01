@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test CORS Configuration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .status {
+            font-weight: bold;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Test de Configuración CORS</h1>
+        <p>Esta página te ayuda a verificar que tu backend tenga CORS configurado correctamente.</p>
+
+        <div class="test-section info">
+            <h3>📋 Información del Test</h3>
+            <p><strong>Frontend:</strong> <span id="frontend-url"></span></p>
+            <p><strong>Backend:</strong> <span id="backend-url"></span></p>
+            <p><strong>Estado del Backend:</strong> <span id="backend-status">Verificando...</span></p>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 Tests de CORS</h3>
+            <button onclick="testBackendStatus()">1. Verificar Backend</button>
+            <button onclick="testCORS()">2. Test CORS Básico</button>
+            <button onclick="testAuthEndpoint()">3. Test Endpoint Auth</button>
+            <button onclick="testWithCredentials()">4. Test con Credentials</button>
+            <button onclick="runAllTests()">🚀 Ejecutar Todos los Tests</button>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'http://localhost:3001';
+        const FRONTEND_URL = window.location.origin;
+
+        // Mostrar URLs
+        document.getElementById('frontend-url').textContent = FRONTEND_URL;
+        document.getElementById('backend-url').textContent = BACKEND_URL;
+
+        function addResult(title, content, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-section ${type}`;
+            resultDiv.innerHTML = `
+                <h4>${title}</h4>
+                <div class="status">${type === 'success' ? '✅ Éxito' : type === 'error' ? '❌ Error' : 'ℹ️ Info'}</div>
+                <pre>${content}</pre>
+            `;
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function testBackendStatus() {
+            clearResults();
+            addResult('Verificando Estado del Backend', 'Probando conexión...', 'info');
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/`, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    document.getElementById('backend-status').textContent = '✅ Conectado';
+                    addResult('Estado del Backend', 'Backend está funcionando correctamente', 'success');
+                } else {
+                    document.getElementById('backend-status').textContent = '⚠️ Respondiendo con error';
+                    addResult('Estado del Backend', `Backend responde pero con status: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                document.getElementById('backend-status').textContent = '❌ No conectado';
+                addResult('Estado del Backend', `Error de conexión: ${error.message}`, 'error');
+            }
+        }
+
+        async function testCORS() {
+            addResult('Test CORS Básico', 'Probando petición simple...', 'info');
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/`, {
+                    method: 'GET',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.text();
+                addResult('Test CORS Básico', `✅ CORS configurado correctamente\nStatus: ${response.status}\nResponse: ${data}`, 'success');
+            } catch (error) {
+                addResult('Test CORS Básico', `❌ Error CORS: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAuthEndpoint() {
+            addResult('Test Endpoint Auth', 'Probando endpoint de autenticación...', 'info');
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/auth/login`, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: 'test',
+                        password: 'test123'
+                    })
+                });
+                
+                const data = await response.text();
+                addResult('Test Endpoint Auth', `✅ Endpoint accesible\nStatus: ${response.status}\nResponse: ${data}`, 'success');
+            } catch (error) {
+                addResult('Test Endpoint Auth', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testWithCredentials() {
+            addResult('Test con Credentials', 'Probando petición con credentials...', 'info');
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/auth/login`, {
+                    method: 'POST',
+                    mode: 'cors',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: 'test',
+                        password: 'test123'
+                    })
+                });
+                
+                const data = await response.text();
+                addResult('Test con Credentials', `✅ Credentials configurados correctamente\nStatus: ${response.status}\nResponse: ${data}`, 'success');
+            } catch (error) {
+                addResult('Test con Credentials', `❌ Error con credentials: ${error.message}`, 'error');
+            }
+        }
+
+        async function runAllTests() {
+            clearResults();
+            addResult('🚀 Ejecutando Todos los Tests', 'Iniciando batería de pruebas...', 'info');
+            
+            await testBackendStatus();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testCORS();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testAuthEndpoint();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testWithCredentials();
+            
+            addResult('📊 Resumen de Tests', 'Todos los tests han sido ejecutados. Revisa los resultados arriba.', 'info');
+        }
+
+        // Auto-ejecutar verificación inicial
+        window.onload = function() {
+            testBackendStatus();
+        };
+    </script>
+</body>
+</html> 
