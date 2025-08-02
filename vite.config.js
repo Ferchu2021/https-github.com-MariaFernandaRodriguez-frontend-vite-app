@@ -9,6 +9,9 @@ export default defineConfig({
       '@': '/src',
     },
   },
+  optimizeDeps: {
+    exclude: ['react-dom/client', 'react-router-dom', 'prop-types']
+  },
   test: {
     globals: true,
     environment: 'jsdom',
