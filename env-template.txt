@@ -1,0 +1,18 @@
+# 🔥 Firebase Configuration - MCGA Project
+# Copia este contenido a un archivo llamado .env en la raíz de tu proyecto
+# Reemplaza estos valores con las credenciales reales de tu proyecto mcga-87b96
+
+VITE_FIREBASE_API_KEY=REEMPLAZA_CON_TU_API_KEY_REAL
+VITE_FIREBASE_AUTH_DOMAIN=mcga-87b96.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=mcga-87b96
+VITE_FIREBASE_STORAGE_BUCKET=mcga-87b96.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=REEMPLAZA_CON_TU_MESSAGING_SENDER_ID
+VITE_FIREBASE_APP_ID=REEMPLAZA_CON_TU_APP_ID_REAL
+
+# ⚠️ INSTRUCCIONES: 
+# 1. Ve a https://console.firebase.google.com/project/mcga-87b96
+# 2. Project Settings > General > Your apps
+# 3. Si no hay app web, crea una nueva (Add app > Web)
+# 4. Copia la configuración real de tu app web
+# 5. Reemplaza los valores de arriba con los reales
+# 6. Guarda el archivo como .env (sin extensión) 
